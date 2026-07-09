@@ -1,6 +1,9 @@
 import "./style.css";
+import exifr from "exifr";
 
 const app = document.getElementById("app");
+
+setupUploadModal();
 
 if (!__MEMORIES_FOLDER_EXISTS__) {
   app.innerHTML = `
@@ -10,7 +13,11 @@ if (!__MEMORIES_FOLDER_EXISTS__) {
     <div class="empty-state">
       <span class="big-emoji">\u{26A0}\u{FE0F}</span>
       The <code>memories</code> folder is missing. Create a <code>memories</code> folder in the project root
-      (with date subfolders like <code>memories/DD-MM-YYYY/photos</code> and <code>videos</code>), then restart the dev server.
+      (with date subfolders like <code>memories/DD-MM-YYYY/photos</code> and <code>videos</code>), then restart the dev server,
+      or upload your first memories below.
+    </div>
+    <div class="upload-cta">
+      <button id="upload-btn">\u{1F4E4} Upload Memories</button>
     </div>
   `;
 } else {
@@ -19,13 +26,21 @@ if (!__MEMORIES_FOLDER_EXISTS__) {
 
 function renderApp() {
   const photoFiles = import.meta.glob(
-    "/memories/*/photos/*.{jpg,JPG,jpeg,JPEG,png,PNG,gif,GIF,webp,WEBP,avif,AVIF}",
+    [
+      "/memories/*/photos/*",
+      "!**/.gitkeep",
+      "!**/*.heic",
+      "!**/*.HEIC",
+      "!**/*.heif",
+      "!**/*.HEIF",
+    ],
     { eager: true, query: "?url", import: "default" }
   );
-  const videoFiles = import.meta.glob(
-    "/memories/*/videos/*.{mp4,MP4,webm,WEBM,mov,MOV,m4v,M4V}",
-    { eager: true, query: "?url", import: "default" }
-  );
+  const videoFiles = import.meta.glob(["/memories/*/videos/*", "!**/.gitkeep"], {
+    eager: true,
+    query: "?url",
+    import: "default",
+  });
 
   const DATE_FOLDER_RE = /\/memories\/([^/]+)\/(photos|videos)\//;
 
@@ -77,6 +92,7 @@ function renderApp() {
       <div class="control-buttons">
         <button id="random-date-btn">\u{1F3B2} Random Date</button>
         <button id="random-memories-btn" class="secondary">✨ Random Memories</button>
+        <button id="upload-btn">\u{1F4E4} Upload Memories</button>
       </div>
     </div>
     <h2 class="section-title" id="section-title"></h2>
@@ -206,4 +222,114 @@ function renderApp() {
       "\u{1F9F8}"
     );
   }
+}
+
+function setupUploadModal() {
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.multiple = true;
+  fileInput.hidden = true;
+  document.body.appendChild(fileInput);
+
+  const overlay = document.createElement("div");
+  overlay.className = "upload-modal-overlay";
+  overlay.hidden = true;
+  overlay.innerHTML = `
+    <div class="upload-modal">
+      <h3>\u{1F4E4} Upload Memories</h3>
+      <p id="upload-file-count"></p>
+      <label for="upload-date-input">Date</label>
+      <input type="date" id="upload-date-input" />
+      <p id="upload-status" class="upload-status" hidden></p>
+      <div class="upload-modal-actions">
+        <button id="upload-cancel-btn" class="secondary" type="button">Cancel</button>
+        <button id="upload-confirm-btn" type="button">Upload</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const dateInput = overlay.querySelector("#upload-date-input");
+  const fileCountEl = overlay.querySelector("#upload-file-count");
+  const statusEl = overlay.querySelector("#upload-status");
+  const confirmBtn = overlay.querySelector("#upload-confirm-btn");
+  const cancelBtn = overlay.querySelector("#upload-cancel-btn");
+
+  let pendingFiles = [];
+
+  function closeModal() {
+    overlay.hidden = true;
+    fileInput.value = "";
+    pendingFiles = [];
+    statusEl.hidden = true;
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = "Upload";
+  }
+
+  async function detectSuggestedDate(files) {
+    for (const file of files) {
+      try {
+        const exif = await exifr.parse(file, ["DateTimeOriginal", "CreateDate"]);
+        const detected = exif?.DateTimeOriginal || exif?.CreateDate;
+        if (detected instanceof Date && !Number.isNaN(detected.getTime())) return detected;
+      } catch {
+        // not a parseable image, or no EXIF date — try the next file
+      }
+    }
+    const times = files.map((f) => f.lastModified).filter(Boolean);
+    return times.length > 0 ? new Date(Math.min(...times)) : new Date();
+  }
+
+  function toDateInputValue(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }
+
+  document.body.addEventListener("click", (event) => {
+    if (event.target.closest("#upload-btn")) {
+      fileInput.click();
+    }
+  });
+
+  fileInput.addEventListener("change", async () => {
+    const files = Array.from(fileInput.files || []);
+    if (files.length === 0) return;
+    pendingFiles = files;
+    fileCountEl.textContent = `${files.length} file${files.length === 1 ? "" : "s"} selected`;
+    const suggested = await detectSuggestedDate(files);
+    dateInput.value = toDateInputValue(suggested);
+    overlay.hidden = false;
+  });
+
+  cancelBtn.addEventListener("click", closeModal);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeModal();
+  });
+
+  confirmBtn.addEventListener("click", async () => {
+    if (!dateInput.value || pendingFiles.length === 0) return;
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Uploading...";
+    statusEl.hidden = true;
+
+    const formData = new FormData();
+    formData.append("date", dateInput.value);
+    pendingFiles.forEach((file) => formData.append("files", file));
+
+    try {
+      const response = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Upload failed");
+      }
+      statusEl.hidden = false;
+      statusEl.textContent = "Uploaded! Refreshing... \u{1F49B}";
+      confirmBtn.textContent = "Done";
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (err) {
+      statusEl.hidden = false;
+      statusEl.textContent = err.message || "Something went wrong";
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Upload";
+    }
+  });
 }

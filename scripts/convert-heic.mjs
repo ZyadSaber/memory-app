@@ -3,39 +3,41 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import heicConvert from "heic-convert";
 
-const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const memoriesDir = path.join(rootDir, "memories");
+const HEIC_RE = /\.(heic|heif)$/i;
 
-function findHeicFiles(dir) {
+export function findHeicFiles(dir) {
   if (!fs.existsSync(dir)) return [];
   const results = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       results.push(...findHeicFiles(fullPath));
-    } else if (/\.heic$/i.test(entry.name)) {
+    } else if (HEIC_RE.test(entry.name)) {
       results.push(fullPath);
     }
   }
   return results;
 }
 
-async function convertAll() {
+export async function convertHeicFiles(memoriesDir) {
   const heicFiles = findHeicFiles(memoriesDir);
-  if (heicFiles.length === 0) return;
 
   for (const heicPath of heicFiles) {
-    const jpgPath = heicPath.replace(/\.heic$/i, ".jpg");
+    const jpgPath = heicPath.replace(HEIC_RE, ".jpg");
     if (fs.existsSync(jpgPath)) continue;
     try {
       const inputBuffer = fs.readFileSync(heicPath);
       const outputBuffer = await heicConvert({ buffer: inputBuffer, format: "JPEG", quality: 0.9 });
       fs.writeFileSync(jpgPath, outputBuffer);
-      console.log(`[convert-heic] ${path.relative(rootDir, heicPath)} -> ${path.basename(jpgPath)}`);
+      console.log(`[convert-heic] ${path.basename(heicPath)} -> ${path.basename(jpgPath)}`);
     } catch (err) {
-      console.error(`[convert-heic] failed for ${path.relative(rootDir, heicPath)}:`, err.message);
+      console.error(`[convert-heic] failed for ${path.basename(heicPath)}:`, err.message);
     }
   }
 }
 
-await convertAll();
+const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMainModule) {
+  const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+  await convertHeicFiles(path.join(rootDir, "memories"));
+}

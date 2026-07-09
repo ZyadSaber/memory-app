@@ -142,6 +142,79 @@ button.secondary {
   box-shadow: 0 6px 16px rgba(246, 201, 198, 0.6);
 }
 
+.upload-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.upload-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(90, 61, 51, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.upload-modal-overlay[hidden] {
+  display: none;
+}
+
+.upload-modal {
+  background: #fff;
+  border-radius: 24px;
+  padding: 1.8rem;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.upload-modal h3 {
+  margin: 0;
+  font-family: "Quicksand", sans-serif;
+  color: var(--terracotta-dark);
+  font-size: 1.2rem;
+}
+
+.upload-modal label {
+  font-weight: 600;
+  color: var(--terracotta-dark);
+  font-size: 0.9rem;
+}
+
+.upload-modal input[type="date"] {
+  border: none;
+  background: var(--cream);
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem;
+  font-family: "Nunito", sans-serif;
+  font-size: 1rem;
+  color: var(--brown);
+}
+
+.upload-modal input[type="date"]:focus {
+  outline: 2px solid var(--terracotta);
+}
+
+.upload-status {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--brown-soft);
+}
+
+.upload-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
 .section-title {
   font-family: "Quicksand", sans-serif;
   font-weight: 600;
