@@ -9,10 +9,46 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const memoriesDir = path.join(rootDir, "memories");
 const memoriesFolderExists = fs.existsSync(memoriesDir);
 
+const DATE_FOLDER_RE = /^\d{1,2}-\d{1,2}-\d{4}$/;
+
 function uploadPlugin() {
   return {
     name: "memories-upload",
     configureServer(server) {
+      server.middlewares.use("/api/message", (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.end("Method not allowed");
+          return;
+        }
+
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk;
+        });
+        req.on("end", async () => {
+          try {
+            const { date, message } = JSON.parse(body);
+            if (!date || !DATE_FOLDER_RE.test(date) || typeof message !== "string") {
+              res.statusCode = 400;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ error: "Missing or invalid date/message" }));
+              return;
+            }
+            const destDir = path.join(memoriesDir, date);
+            fs.mkdirSync(destDir, { recursive: true });
+            fs.writeFileSync(path.join(destDir, "message.md"), message, "utf-8");
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true }));
+            await server.restart();
+          } catch (err) {
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+      });
+
       server.middlewares.use("/api/upload", (req, res) => {
         if (req.method !== "POST") {
           res.statusCode = 405;

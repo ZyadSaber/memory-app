@@ -4,6 +4,7 @@ import exifr from "exifr";
 const app = document.getElementById("app");
 
 setupUploadModal();
+const noteModal = setupNoteModal();
 
 if (!__MEMORIES_FOLDER_EXISTS__) {
   app.innerHTML = `
@@ -21,10 +22,21 @@ if (!__MEMORIES_FOLDER_EXISTS__) {
     </div>
   `;
 } else {
-  renderApp();
+  renderApp(noteModal);
 }
 
-function renderApp() {
+function renderApp(noteModal) {
+  const messageFiles = import.meta.glob("/memories/*/message.md", {
+    eager: true,
+    query: "?raw",
+    import: "default",
+  });
+  const messages = {};
+  for (const [filePath, content] of Object.entries(messageFiles)) {
+    const match = filePath.match(/\/memories\/([^/]+)\/message\.md$/);
+    if (match) messages[match[1]] = content;
+  }
+
   const photoFiles = import.meta.glob(
     [
       "/memories/*/photos/*",
@@ -96,6 +108,7 @@ function renderApp() {
       </div>
     </div>
     <h2 class="section-title" id="section-title"></h2>
+    <div id="note-section" class="note-section"></div>
     <div id="gallery" class="gallery"></div>
     <footer class="note">${dateKeys.length} day${dateKeys.length === 1 ? "" : "s"} of memories saved so far</footer>
   `;
@@ -103,6 +116,41 @@ function renderApp() {
   const dateList = document.getElementById("date-list");
   const gallery = document.getElementById("gallery");
   const sectionTitle = document.getElementById("section-title");
+  const noteSection = document.getElementById("note-section");
+
+  function renderNote(dateKey) {
+    if (!dateKey) {
+      noteSection.innerHTML = "";
+      return;
+    }
+    const content = messages[dateKey];
+    const hasNote = !!content && content.trim().length > 0;
+    noteSection.innerHTML = `
+      <div class="note-card">
+        <div class="note-body"></div>
+        <button class="note-edit-btn" data-date="${dateKey}">${hasNote ? "\u{270F}\u{FE0F} Edit note" : "\u{1F4DD} Add a note"}</button>
+      </div>
+    `;
+    const bodyEl = noteSection.querySelector(".note-body");
+    if (hasNote) {
+      const p = document.createElement("p");
+      p.className = "note-text";
+      p.textContent = content;
+      bodyEl.appendChild(p);
+    } else {
+      const p = document.createElement("p");
+      p.className = "note-placeholder";
+      p.textContent = "No note for this day yet \u{1F4AC}";
+      bodyEl.appendChild(p);
+    }
+  }
+
+  noteSection.addEventListener("click", (event) => {
+    const editBtn = event.target.closest(".note-edit-btn");
+    if (!editBtn) return;
+    const dateKey = editBtn.dataset.date;
+    noteModal.open(dateKey, messages[dateKey] || "");
+  });
 
   function renderDateList(activeKey) {
     if (sortedDateKeys.length === 0) {
@@ -134,11 +182,13 @@ function renderApp() {
   function renderDate(dateKey) {
     if (!dateKey || !memories[dateKey]) {
       sectionTitle.textContent = "";
+      renderNote(null);
       renderEmpty("No memories for this date yet \u{1F49B}", "\u{1F4ED}");
       return;
     }
     const { photos, videos } = memories[dateKey];
     sectionTitle.textContent = formatPretty(dateKey);
+    renderNote(dateKey);
     if (photos.length === 0 && videos.length === 0) {
       renderEmpty("This day is empty so far \u{1F49B}");
       return;
@@ -166,6 +216,7 @@ function renderApp() {
       videos.forEach((url) => pool.push({ url, dateKey, type: "video" }));
     }
     renderDateList(null);
+    renderNote(null);
     if (pool.length === 0) {
       sectionTitle.textContent = "Random Memories";
       renderEmpty("No memories saved yet \u{1F49B}", "✨");
@@ -203,6 +254,7 @@ function renderApp() {
     if (dateKeys.length === 0) {
       renderEmpty("No memory folders exist yet \u{1F49B}", "\u{1F3B2}");
       sectionTitle.textContent = "";
+      renderNote(null);
       return;
     }
     const randomKey = dateKeys[Math.floor(Math.random() * dateKeys.length)];
@@ -217,6 +269,7 @@ function renderApp() {
     selectDate(sortedDateKeys[0]);
   } else {
     renderDateList(null);
+    renderNote(null);
     renderEmpty(
       "Add a folder under <code>memories/DD-MM-YYYY/photos</code> or <code>videos</code> to get started \u{1F49B}",
       "\u{1F9F8}"
@@ -332,4 +385,78 @@ function setupUploadModal() {
       confirmBtn.textContent = "Upload";
     }
   });
+}
+
+function setupNoteModal() {
+  const overlay = document.createElement("div");
+  overlay.className = "upload-modal-overlay";
+  overlay.hidden = true;
+  overlay.innerHTML = `
+    <div class="upload-modal note-modal">
+      <h3>\u{1F4DD} Day Note</h3>
+      <textarea id="note-textarea" rows="6" placeholder="Write something about this day..."></textarea>
+      <p id="note-status" class="upload-status" hidden></p>
+      <div class="upload-modal-actions">
+        <button id="note-cancel-btn" class="secondary" type="button">Cancel</button>
+        <button id="note-save-btn" type="button">Save</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const textarea = overlay.querySelector("#note-textarea");
+  const statusEl = overlay.querySelector("#note-status");
+  const saveBtn = overlay.querySelector("#note-save-btn");
+  const cancelBtn = overlay.querySelector("#note-cancel-btn");
+
+  let activeDateKey = null;
+
+  function closeModal() {
+    overlay.hidden = true;
+    statusEl.hidden = true;
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save";
+  }
+
+  cancelBtn.addEventListener("click", closeModal);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeModal();
+  });
+
+  saveBtn.addEventListener("click", async () => {
+    if (!activeDateKey) return;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+    statusEl.hidden = true;
+
+    try {
+      const response = await fetch("/api/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: activeDateKey, message: textarea.value }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Save failed");
+      }
+      statusEl.hidden = false;
+      statusEl.textContent = "Saved! Refreshing... \u{1F49B}";
+      saveBtn.textContent = "Done";
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err) {
+      statusEl.hidden = false;
+      statusEl.textContent = err.message || "Something went wrong";
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save";
+    }
+  });
+
+  return {
+    open(dateKey, currentText) {
+      activeDateKey = dateKey;
+      textarea.value = currentText || "";
+      overlay.hidden = false;
+      textarea.focus();
+    },
+  };
 }

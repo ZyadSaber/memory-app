@@ -215,6 +215,64 @@ button.secondary {
   margin-top: 0.5rem;
 }
 
+.note-modal textarea {
+  border: none;
+  background: var(--cream);
+  border-radius: 12px;
+  padding: 0.8rem;
+  font-family: "Nunito", sans-serif;
+  font-size: 1rem;
+  color: var(--brown);
+  resize: vertical;
+  min-height: 120px;
+}
+
+.note-modal textarea:focus {
+  outline: 2px solid var(--terracotta);
+}
+
+.note-section {
+  margin: 0 0 1.5rem;
+}
+
+.note-card {
+  background: var(--cream-deep);
+  border-radius: 20px;
+  padding: 1.2rem 1.5rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.note-text {
+  margin: 0;
+  color: var(--brown);
+  white-space: pre-wrap;
+  line-height: 1.5;
+  flex: 1;
+  min-width: 200px;
+}
+
+.note-placeholder {
+  margin: 0;
+  color: var(--brown-soft);
+  font-style: italic;
+  flex: 1;
+  min-width: 200px;
+}
+
+.note-edit-btn {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #f2b8ae, var(--blush));
+  color: var(--terracotta-dark);
+  box-shadow: 0 6px 16px rgba(246, 201, 198, 0.6);
+}
+
 .section-title {
   font-family: "Quicksand", sans-serif;
   font-weight: 600;
@@ -333,5 +391,15 @@ footer.note {
   .empty-state {
     padding: 2rem 1rem;
     font-size: 1rem;
+  }
+
+  .note-card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .note-edit-btn {
+    width: 100%;
   }
 }
