@@ -1,0 +1,264 @@
+@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;800&display=swap");
+
+:root {
+  --cream: #fff6ec;
+  --cream-deep: #fbe9d7;
+  --blush: #f6c9c6;
+  --terracotta: #c17a5a;
+  --terracotta-dark: #a35f42;
+  --brown: #5a3d33;
+  --brown-soft: #8a6b5c;
+  --shadow: 0 10px 30px rgba(163, 95, 66, 0.15);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Nunito", sans-serif;
+  color: var(--brown);
+  background: radial-gradient(circle at 15% 10%, var(--blush) 0%, transparent 45%),
+    radial-gradient(circle at 85% 0%, var(--cream-deep) 0%, transparent 40%),
+    radial-gradient(circle at 50% 100%, var(--cream-deep) 0%, transparent 50%),
+    var(--cream);
+  background-attachment: fixed;
+}
+
+#app {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  color: var(--terracotta-dark);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.header p {
+  margin: 0.4rem 0 0;
+  color: var(--brown-soft);
+  font-size: 1.05rem;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: #fff;
+  border-radius: 24px;
+  padding: 1.2rem 1.5rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.date-list {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 0.6rem;
+  padding: 0.2rem 0.1rem;
+  scrollbar-width: thin;
+}
+
+.date-list-empty {
+  color: var(--brown-soft);
+  font-size: 0.9rem;
+  padding: 0.4rem;
+}
+
+.date-chip {
+  flex: 0 0 auto;
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  color: var(--terracotta-dark);
+  background: var(--cream);
+  box-shadow: none;
+  white-space: nowrap;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.date-chip:hover {
+  transform: translateY(-1px);
+  background: var(--cream-deep);
+}
+
+.date-chip.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--terracotta), var(--terracotta-dark));
+}
+
+.control-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
+}
+
+button {
+  font-family: "Quicksand", sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.7rem 1.4rem;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, var(--terracotta), var(--terracotta-dark));
+  box-shadow: 0 6px 16px rgba(193, 122, 90, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(193, 122, 90, 0.45);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button.secondary {
+  background: linear-gradient(135deg, #f2b8ae, var(--blush));
+  color: var(--terracotta-dark);
+  box-shadow: 0 6px 16px rgba(246, 201, 198, 0.6);
+}
+
+.section-title {
+  font-family: "Quicksand", sans-serif;
+  font-weight: 600;
+  color: var(--terracotta-dark);
+  font-size: 1.3rem;
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  color: var(--brown-soft);
+  font-size: 1.1rem;
+}
+
+.empty-state .big-emoji {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1.1rem;
+}
+
+.memory-card {
+  position: relative;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease;
+}
+
+.memory-card:hover {
+  transform: translateY(-4px) scale(1.01);
+}
+
+.memory-card img,
+.memory-card video {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+  background: var(--cream-deep);
+}
+
+.memory-card .caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(to top, rgba(90, 61, 51, 0.75), transparent);
+}
+
+.video-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(90, 61, 51, 0.7);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+footer.note {
+  text-align: center;
+  margin-top: 2.5rem;
+  color: var(--brown-soft);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  #app {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
+  }
+
+  .controls {
+    padding: 1rem;
+    border-radius: 20px;
+  }
+
+  .control-buttons {
+    flex-direction: column;
+  }
+
+  .control-buttons button {
+    width: 100%;
+  }
+
+  .gallery {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .memory-card img,
+  .memory-card video {
+    height: 150px;
+  }
+
+  .empty-state {
+    padding: 2rem 1rem;
+    font-size: 1rem;
+  }
+}

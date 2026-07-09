@@ -1,0 +1,19 @@
+{
+  "name": "memory-app",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/convert-heic.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/convert-heic.mjs",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "heic-convert": "^2.1.0"
+  }
+}
