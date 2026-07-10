@@ -5,17 +5,23 @@
   "type": "module",
   "scripts": {
     "predev": "node scripts/convert-heic.mjs",
-    "dev": "vite",
+    "dev": "concurrently -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "node --watch server/index.mjs",
+    "dev:client": "vite",
     "prebuild": "node scripts/convert-heic.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "prestart": "node scripts/convert-heic.mjs",
+    "start": "node server/index.mjs"
   },
   "devDependencies": {
+    "concurrently": "^10.0.3",
     "vite": "^6.0.0"
   },
   "dependencies": {
     "busboy": "^1.6.0",
+    "dotenv": "^17.4.2",
     "exifr": "^7.1.3",
+    "express": "^5.2.1",
     "heic-convert": "^2.1.0"
   }
 }

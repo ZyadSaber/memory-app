@@ -1,0 +1,15 @@
+[Unit]
+Description=Our Memories app
+After=network.target
+
+[Service]
+Type=simple
+User=<your-linux-user>
+WorkingDirectory=/path/to/memory-app
+EnvironmentFile=/path/to/memory-app/.env
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

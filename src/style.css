@@ -142,12 +142,6 @@ button.secondary {
   box-shadow: 0 6px 16px rgba(246, 201, 198, 0.6);
 }
 
-.upload-cta {
-  display: flex;
-  justify-content: center;
-  margin-top: 1.5rem;
-}
-
 .upload-modal-overlay {
   position: fixed;
   inset: 0;
